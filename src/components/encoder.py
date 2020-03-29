@@ -35,9 +35,9 @@ class EncoderRNN(nn.Module):
                               num_layers=self.nlayers, dropout=(0 if self.nlayers == 1 else dropout),
                               bidirectional=bidirectional)
 
-    def forward(self, input_seqs, input_lengths, hidden=None):
+    def forward(self, input_seqs, input_lengths, hidden=None, enforce_sorted=True):
         embedded = self.embedding(input_seqs)
-        packed = torch.nn.utils.rnn.pack_padded_sequence(embedded, input_lengths)
+        packed = torch.nn.utils.rnn.pack_padded_sequence(embedded, input_lengths, enforce_sorted=enforce_sorted)
         outputs, hidden = self.rnn(packed, hidden)
         outputs, output_lengths = torch.nn.utils.rnn.pad_packed_sequence(outputs) # unpack (back to padded)
         if self.bidirectional:

@@ -14,6 +14,16 @@ from src.components.beamsearch import Hypothesis
 
 from submodopt.submodopt import SubmodularOpt
 
+
+def JointEmbeddingLoss(feature_emb1, feature_emb2):
+       
+    batch_size = feature_emb1.size()[1]
+    res = 0
+
+    for i in range(feature_emb1.size()[0]):
+        res += torch.sum(torch.clamp(torch.mm(feature_emb1[i], feature_emb2[i].t()) - torch.sum(feature_emb1[i] * feature_emb2[i], dim=-1) + 1,min=0.0)) / (batch_size * batch_size)
+    return res
+
 class s2s(nn.Module):
     def __init__(self, config, voc, device, logger, EOS_tag='EOS', SOS_tag='SOS'):
         super(s2s, self).__init__()
@@ -90,8 +100,18 @@ class s2s(nn.Module):
 
     def trainer(self, src_tens, src_len, tgt_tens, tgt_len):
         self.optimizer.zero_grad()
+        # print("=========1")
+        # print(src_tens.size())
+        # print("=========2")
+        # print(src_len)
         encoder_outputs, encoder_hidden = self.encoder(src_tens, src_len)
+        # print("=========3")
+        # print(encoder_hidden)
 
+        target_length = max(tgt_len)
+
+        output_tens = torch.ones((target_length, src_tens.size()[1]), dtype=torch.long)
+        output_len = [0]*(src_tens.size()[1])
         self.loss       = 0
 
         decoder_input   = torch.tensor([self.SOS_token for i in range(src_tens.size(1))], device=self.device)
@@ -104,7 +124,6 @@ class s2s(nn.Module):
             decoder_hidden  = encoder_hidden[:self.decoder.nlayers]
 
         use_teacher_forcing = True if random.random() < self.config.tfr else False
-        target_length = max(tgt_len)
 
         if use_teacher_forcing:
             for di in range(target_length):
@@ -112,6 +131,14 @@ class s2s(nn.Module):
                     decoder_output, decoder_hidden, decoder_attention = self.decoder(decoder_input, decoder_hidden, encoder_outputs)
                 else:
                     decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden)
+                
+                topv, topi  = decoder_output.data.topk(1)
+                for i in range(src_tens.size(1)):
+                    if topi[i].item() == self.EOS_token:
+                        continue
+                    output_tens[output_len[i]][i] = topi[i].item()
+                    output_len[i] += 1
+
                 self.loss += self.criterion(decoder_output, tgt_tens[di])
                 decoder_input = tgt_tens[di]
         else:
@@ -121,11 +148,31 @@ class s2s(nn.Module):
                 else:
                     decoder_output, decoder_hidden = self.decoder(decoder_input, decoder_hidden)
 
-                topv, topi = decoder_output.topk(1)
+                topv, topi  = decoder_output.data.topk(1)
+                for i in range(src_tens.size(1)):
+                    if topi[i].item() == self.EOS_token:
+                        continue
+                    output_tens[output_len[i]][i] = topi[i].item()
+                    output_len[i] += 1
+
+
                 self.loss += self.criterion(decoder_output, tgt_tens[di])
                 decoder_input=topi.squeeze().detach()
+        # print("=========4")
+        # print(output_tens.size())
+        # print(output_tens)
+        # print("=========5")
+        # print(output_len)
 
-        self.loss.backward()
+        output_len = [max(i,1) for i in output_len]
+
+        _, ref_hidden = self.encoder(tgt_tens, tgt_len, enforce_sorted=False)
+        _, out_hidden = self.encoder(output_tens.to(self.device), output_len, enforce_sorted=False)
+        # print("=========6")
+        # print(ref_hidden[0].size())
+        global_loss = JointEmbeddingLoss(ref_hidden[0], out_hidden[0])
+        
+        (self.loss + global_loss).backward()
         if self.config.max_grad_norm > 0:
             torch.nn.utils.clip_grad_norm_(self.params, self.config.max_grad_norm)
         self.optimizer.step()
