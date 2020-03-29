@@ -13,14 +13,21 @@ warnings.filterwarnings("ignore")
 
 
 class ParaphraseDataset(Dataset):
-    def __init__(self, dataset, datatype, max_length=20, is_debug=False, is_train=False):
+    def __init__(self, dataset, datatype, max_length=20, is_debug=False, is_train=False, is_test=False):
         orig_file = os.path.join('data',dataset, datatype, 'src.txt')
         para_file = os.path.join('data',dataset, datatype, 'tgt.txt')
-
-        with open(orig_file, 'r', encoding='utf-8', errors='ignore') as f:
-            self.orig_sents = f.read().split('\n')[:-1]
-        with open(para_file, 'r', encoding='utf-8', errors='ignore') as f:
-            self.para_sents = f.read().split('\n')[:-1]
+        self.is_test = is_test
+        if self.is_test:
+            with open(orig_file, 'r', encoding='utf-8', errors='ignore') as f:
+                for line in f.read().split('\n')[:-1]:
+                    line_parts = line.split('|')
+                    self.orig_sents.append(line_parts[1])
+                    self.para_sents.append(line_parts[0])
+        else:
+            with open(orig_file, 'r', encoding='utf-8', errors='ignore') as f:
+                self.orig_sents = f.read().split('\n')[:-1]
+            with open(para_file, 'r', encoding='utf-8', errors='ignore') as f:
+                self.para_sents = f.read().split('\n')[:-1]
 
         if is_debug:
             self.orig_sents = self.orig_sents[:5000]
@@ -43,9 +50,15 @@ class ParaphraseDataset(Dataset):
         return len(self.orig_sents)
 
     def __getitem__(self, idx):
-        src  = self.process_string(self.unicodeToAscii(self.orig_sents[idx]))
-        tgt  = self.process_string(self.unicodeToAscii(self.para_sents[idx]))
-        pair = {'src': self.curb_to_length(src), 'tgt': self.curb_to_length(tgt)}
+        if self.is_test:
+            src  = self.process_string(self.unicodeToAscii(self.orig_sents[idx]))
+            src = self.curb_to_length(src)
+            tgt  = self.para_sents[idx]
+            pair = {'src': src, 'tgt': src, 'id':tgt}
+        else:
+            src  = self.process_string(self.unicodeToAscii(self.orig_sents[idx]))
+            tgt  = self.process_string(self.unicodeToAscii(self.para_sents[idx]))
+            pair = {'src': self.curb_to_length(src), 'tgt': self.curb_to_length(tgt)}
         return pair
 
     def curb_to_length(self, string):

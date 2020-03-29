@@ -238,7 +238,7 @@ def decode_beam(model, test_dataloader,  voc, device, args, logger, smethod, dat
 
 
     st_time = time.time()
-    with open(results_file, 'w') as f:
+    with open(results_file, 'w') as f, open(args.predict_file_name, 'w') as f2:
         for pairs in test_dataloader:
             logger.info('Processing batch : {}'.format(batch_num))
             src_tens  = indicesFromSentences(voc, pairs['src'], args.max_length)
@@ -256,6 +256,7 @@ def decode_beam(model, test_dataloader,  voc, device, args, logger, smethod, dat
 
             decoder_output = [decoder_output[i] for i in orig_order]
             src_sents = [src_sents[i] for i in orig_order]
+            src_ids = [pairs['id'][i] for i in orig_order]
 
             all_results+= decoder_output
 
@@ -272,6 +273,11 @@ def decode_beam(model, test_dataloader,  voc, device, args, logger, smethod, dat
                 for j in range(len(decoder_output[i]) ):
                     f.write('Beam {} : {}'.format(j+1, decoder_output[i][j]))
                 f.write('-----------------\n')
+
+                f2.write("{}|{}".format(src_ids[i],src_sents[i]))
+                for j in range(len(decoder_output[i]) ):
+                    f2.write('{}'.format(decoder_output[i][j]))
+                f2.write('\n')
 
             batch_num += 1
 

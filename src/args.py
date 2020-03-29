@@ -15,6 +15,8 @@ def build_parser():
     parser.add_argument('-b1', type=float, default=1.0, help='Lambda Value for Submod')
     parser.add_argument('-b2', type=float, default=1.0, help='Lambda Value for Submod')
 
+    parser.add_argument('-global_loss_weight', type=float, default=0.5, help='Global loss weight')
+    parser.add_argument('-predict_file_name', type=str, default="predict.txt", help='Predict file name')
 
     parser.add_argument('-selec', type=str, default='normal', choices=['normal', 'submod', 'random'], help='Subset Selection Method')
     parser.add_argument('-dataset', type=str, default='quora', choices=['quora', 'twitter'], help='Dataset to use')
