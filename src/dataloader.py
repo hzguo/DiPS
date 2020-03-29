@@ -68,7 +68,7 @@ class ParaphraseDataset(Dataset):
         return ' '.join(string.strip().split()[:self.max_length])
 
     def process_string(self, string):
-        if language == "en":
+        if self.language == "en":
             string = self.unicodeToAscii(string)
             string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
             string = re.sub(r"\'s", " 's", string)

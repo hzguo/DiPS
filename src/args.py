@@ -19,7 +19,7 @@ def build_parser():
     parser.add_argument('-language', type=str, default="en", help='Language')
 
     parser.add_argument('-selec', type=str, default='normal', choices=['normal', 'submod', 'random'], help='Subset Selection Method')
-    parser.add_argument('-dataset', type=str, default='quora', choices=['quora', 'twitter'], help='Dataset to use')
+    parser.add_argument('-dataset', type=str, default='quora', help='Dataset to use')
 
     # Run name should just be alphabetical word (no special characters to be included)
     parser.add_argument('-run_name', type=str, default='DiPS', help='Enter the run name')
