@@ -27,8 +27,8 @@ from collections import OrderedDict
 def read_files(args, logger):
     if args.mode == 'train':
         logger.info('Training and Validation data loading..')
-        train_set           = ParaphraseDataset(args.dataset, 'train', args.max_length, args.debug, True)
-        val_set             = ParaphraseDataset(args.dataset, 'val', args.max_length, args.debug)
+        train_set           = ParaphraseDataset(args.dataset, 'train', args.max_length, args.debug, True, language = args.language)
+        val_set             = ParaphraseDataset(args.dataset, 'val', args.max_length, args.debug, language = args.language)
 
         if args.len_sort:
             train_dataloader    = DataLoader(train_set, batch_size = args.batch_size, shuffle=False, num_workers=5)
@@ -43,7 +43,7 @@ def read_files(args, logger):
 
     elif args.mode == 'decode':
         logger.info('Test data loading..')
-        test_set            = ParaphraseDataset(args.dataset, 'test', args.max_length, args.debug, is_test=True)
+        test_set            = ParaphraseDataset(args.dataset, 'test', args.max_length, args.debug, is_test=True, language = args.language)
         test_dataloader     = DataLoader(test_set, batch_size = args.batch_size, shuffle=False, num_workers=5)
         logger.info('Test data loaded!')
 
@@ -398,7 +398,7 @@ def main():
             logger.info('Starting a fresh training procedure')
             ep_offset = 0
             min_val_loss = 1e8
-            max_val_bleu = 0.0
+            max_val_bleu = -0.1
             config_file_name = os.path.join('Model', args.run_name, 'config.p')
 
             if args.use_word2vec:

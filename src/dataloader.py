@@ -13,10 +13,11 @@ warnings.filterwarnings("ignore")
 
 
 class ParaphraseDataset(Dataset):
-    def __init__(self, dataset, datatype, max_length=20, is_debug=False, is_train=False, is_test=False):
+    def __init__(self, dataset, datatype, max_length=20, is_debug=False, is_train=False, is_test=False, language="en"):
         orig_file = os.path.join('data',dataset, datatype, 'src.txt')
         para_file = os.path.join('data',dataset, datatype, 'tgt.txt')
         self.is_test = is_test
+        self.language = language
         if self.is_test:
             with open(orig_file, 'r', encoding='utf-8', errors='ignore') as f:
                 self.orig_sents = []
@@ -53,13 +54,13 @@ class ParaphraseDataset(Dataset):
 
     def __getitem__(self, idx):
         if self.is_test:
-            src  = self.process_string(self.unicodeToAscii(self.orig_sents[idx]))
+            src  = self.process_string(self.orig_sents[idx])
             src = self.curb_to_length(src)
             tgt  = self.para_sents[idx]
             pair = {'src': src, 'tgt': src, 'id':tgt}
         else:
-            src  = self.process_string(self.unicodeToAscii(self.orig_sents[idx]))
-            tgt  = self.process_string(self.unicodeToAscii(self.para_sents[idx]))
+            src  = self.process_string(self.orig_sents[idx])
+            tgt  = self.process_string(self.para_sents[idx])
             pair = {'src': self.curb_to_length(src), 'tgt': self.curb_to_length(tgt)}
         return pair
 
@@ -67,19 +68,21 @@ class ParaphraseDataset(Dataset):
         return ' '.join(string.strip().split()[:self.max_length])
 
     def process_string(self, string):
-        string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
-        string = re.sub(r"\'s", " 's", string)
-        string = re.sub(r"\'ve", " 've", string)
-        string = re.sub(r"n\'t", " n't", string)
-        string = re.sub(r"\'re", " 're", string)
-        string = re.sub(r"\'d", " 'd", string)
-        string = re.sub(r"\'ll", " 'll", string)
-        string = re.sub(r",", " , ", string)
-        string = re.sub(r"!", " ! ", string)
-        string = re.sub(r"\(", " ( ", string)
-        string = re.sub(r"\)", " ) ", string)
-        string = re.sub(r"\?", " ? ", string)
-        string = re.sub(r"\s{2,}", " ", string)
+        if language == "en":
+            string = self.unicodeToAscii(string)
+            string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
+            string = re.sub(r"\'s", " 's", string)
+            string = re.sub(r"\'ve", " 've", string)
+            string = re.sub(r"n\'t", " n't", string)
+            string = re.sub(r"\'re", " 're", string)
+            string = re.sub(r"\'d", " 'd", string)
+            string = re.sub(r"\'ll", " 'll", string)
+            string = re.sub(r",", " , ", string)
+            string = re.sub(r"!", " ! ", string)
+            string = re.sub(r"\(", " ( ", string)
+            string = re.sub(r"\)", " ) ", string)
+            string = re.sub(r"\?", " ? ", string)
+            string = re.sub(r"\s{2,}", " ", string)
         return string
 
     def unicodeToAscii(self, string):
