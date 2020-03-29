@@ -43,7 +43,7 @@ def read_files(args, logger):
 
     elif args.mode == 'decode':
         logger.info('Test data loading..')
-        test_set            = ParaphraseDataset(args.dataset, 'test', args.max_length, args.debug)
+        test_set            = ParaphraseDataset(args.dataset, 'test', args.max_length, args.debug, is_test=True)
         test_dataloader     = DataLoader(test_set, batch_size = args.batch_size, shuffle=False, num_workers=5)
         logger.info('Test data loaded!')
 
@@ -238,7 +238,7 @@ def decode_beam(model, test_dataloader,  voc, device, args, logger, smethod, dat
 
 
     st_time = time.time()
-    with open(results_file, 'w') as f, open(args.predict_file_name, 'w') as f2:
+    with open(results_file, 'w') as f:
         for pairs in test_dataloader:
             logger.info('Processing batch : {}'.format(batch_num))
             src_tens  = indicesFromSentences(voc, pairs['src'], args.max_length)
@@ -256,62 +256,61 @@ def decode_beam(model, test_dataloader,  voc, device, args, logger, smethod, dat
 
             decoder_output = [decoder_output[i] for i in orig_order]
             src_sents = [src_sents[i] for i in orig_order]
-            src_ids = [pairs['id'][i] for i in orig_order]
 
-            all_results+= decoder_output
+            # all_results+= decoder_output
+
+            # for i in range(len(src_sents)):
+            #     all_src += [' '.join(src_sents[i])]
 
             for i in range(len(src_sents)):
-                all_src += [' '.join(src_sents[i])]
+                # logger.info('Sentence: {} '.format(' '.join(src_sents[i])))
+                # for j in range(len(decoder_output[i]) ):
+                #     logger.info('Beam {} : {}'.format(j+1, decoder_output[i][j]))
+                # logger.info('-------------------------')
 
-            for i in range(len(src_sents)):
-                logger.info('Sentence: {} '.format(' '.join(src_sents[i])))
-                for j in range(len(decoder_output[i]) ):
-                    logger.info('Beam {} : {}'.format(j+1, decoder_output[i][j]))
-                logger.info('-------------------------')
+                # f.write('Sentence: {} \n'.format(' '.join(src_sents[i])))
+                # for j in range(len(decoder_output[i]) ):
+                #     f.write('Beam {} : {}'.format(j+1, decoder_output[i][j]))
+                # f.write('-----------------\n')
 
-                f.write('Sentence: {} \n'.format(' '.join(src_sents[i])))
+                f.write("{}|{}\n".format(pairs['id'][i],' '.join(src_sents[i])))
                 for j in range(len(decoder_output[i]) ):
-                    f.write('Beam {} : {}'.format(j+1, decoder_output[i][j]))
-                f.write('-----------------\n')
-
-                f2.write("{}|{}".format(src_ids[i],src_sents[i]))
-                for j in range(len(decoder_output[i]) ):
-                    f2.write('{}'.format(decoder_output[i][j]))
-                f2.write('\n')
+                    f.write('{}\n'.format(decoder_output[i][j]))
+                f.write('\n')
 
             batch_num += 1
 
     etime = (time.time() - st_time)/60.0
     print('Time Taken for decoding: {}'.format(etime))
 
-    all_results= np.array(all_results)
-    all_src = np.array(all_src)
-    final_res = []
-    for sk in range(len(all_src)):
-        td=[]
-        for gen in all_results[sk]:
-            td.append([all_src[sk], gen])
-        final_res.append(td)
-    final_res = np.array(final_res)
+    # all_results= np.array(all_results)
+    # all_src = np.array(all_src)
+    # final_res = []
+    # for sk in range(len(all_src)):
+    #     td=[]
+    #     for gen in all_results[sk]:
+    #         td.append([all_src[sk], gen])
+    #     final_res.append(td)
+    # final_res = np.array(final_res)
 
 
 
-    param_str = [str(s) for s in args.sparam]
-    param_str= '_'.join(param_str)
+    # param_str = [str(s) for s in args.sparam]
+    # param_str= '_'.join(param_str)
 
-    if smethod == 'submod':
-        res_save_path= os.path.join('Output', 'results_{}_{}_{}_{}'.format(smethod, data_sub, args.slam, param_str))
-        fres_save_path= os.path.join('Output', 'fres_{}_{}_{}_{}'.format(smethod, data_sub, args.slam, param_str))
-    else:
-        res_save_path= os.path.join('Output', 'results_{}_{}'.format(smethod, data_sub))
-        fres_save_path= os.path.join('Output', 'fres_{}_{}'.format(smethod, data_sub))
+    # if smethod == 'submod':
+    #     res_save_path= os.path.join('Output', 'results_{}_{}_{}_{}'.format(smethod, data_sub, args.slam, param_str))
+    #     fres_save_path= os.path.join('Output', 'fres_{}_{}_{}_{}'.format(smethod, data_sub, args.slam, param_str))
+    # else:
+    #     res_save_path= os.path.join('Output', 'results_{}_{}'.format(smethod, data_sub))
+    #     fres_save_path= os.path.join('Output', 'fres_{}_{}'.format(smethod, data_sub))
 
-    np.save(res_save_path, all_results)
-    np.save(fres_save_path, final_res)
-    print(all_results.shape)
-    print(final_res.shape)
-    print('Output Saved at {}'.format(res_save_path))
-    print('Output Saved at {}'.format(fres_save_path))
+    # np.save(res_save_path, all_results)
+    # np.save(fres_save_path, final_res)
+    # print(all_results.shape)
+    # print(final_res.shape)
+    # print('Output Saved at {}'.format(res_save_path))
+    # print('Output Saved at {}'.format(fres_save_path))
 
 
 def create_vocab_dict(args, voc, train_dataloader):

@@ -19,6 +19,8 @@ class ParaphraseDataset(Dataset):
         self.is_test = is_test
         if self.is_test:
             with open(orig_file, 'r', encoding='utf-8', errors='ignore') as f:
+                self.orig_sents = []
+                self.para_sents = []
                 for line in f.read().split('\n')[:-1]:
                     line_parts = line.split('|')
                     self.orig_sents.append(line_parts[1])
