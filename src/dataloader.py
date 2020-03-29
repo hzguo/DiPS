@@ -1,6 +1,7 @@
 import os, re
 import torch
 import unicodedata
+import itertools
 
 from torch.utils.data import Dataset
 
@@ -9,7 +10,13 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-
+def strip_punctuation(text: str) -> str:
+    """
+    Remove punctuations of several languages, including Japanese.
+    """
+    return "".join(
+        itertools.filterfalse(lambda x: unicodedata.category(x).startswith("P"), text)
+    )
 
 
 class ParaphraseDataset(Dataset):
@@ -85,13 +92,7 @@ class ParaphraseDataset(Dataset):
             string = re.sub(r"\?", " ? ", string)
             string = re.sub(r"\s{2,}", " ", string)
         else:
-            string = re.sub(r",", " , ", string)
-            string = re.sub(r"!", " ! ", string)
-            string = re.sub(r"\.", " ", string)
-            string = re.sub(r"\(", " ( ", string)
-            string = re.sub(r"\)", " ) ", string)
-            string = re.sub(r"\?", " ? ", string)
-            string = re.sub(r"\s{2,}", " ", string)
+            string = strip_punctuation(string)
         return string
 
     def unicodeToAscii(self, string):
