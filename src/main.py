@@ -95,19 +95,19 @@ def train(model, train_dataloader, val_dataloader, voc, device, args, logger, ep
         # Run Validation experiment
         bleu_score_epoch, val_loss_epoch = run_validation(args, model, val_dataloader, voc, device, ep + ep_offset, logger)
 
-        if bleu_score_epoch[0] > max_val_bleu:
-            min_val_loss = val_loss_epoch
-            max_val_bleu = bleu_score_epoch[0]
-            state = {
-                'epoch' : ep + ep_offset,
-                'model_state_dict': model.state_dict(),
-                'voc': model.voc,
-                'optimizer_state_dict': model.optimizer.state_dict(),
-                'train_loss' : train_loss_epoch,
-                'val_loss' : min_val_loss,
-                'bleu' : max_val_bleu
-            }
-            save_checkpoint(state, ep+ep_offset, logger, os.path.join('Model', args.run_name, args.ckpt_file), args)
+        # if bleu_score_epoch[0] > max_val_bleu:
+        min_val_loss = val_loss_epoch
+        max_val_bleu = bleu_score_epoch[0]
+        state = {
+            'epoch' : ep + ep_offset,
+            'model_state_dict': model.state_dict(),
+            'voc': model.voc,
+            'optimizer_state_dict': model.optimizer.state_dict(),
+            'train_loss' : train_loss_epoch,
+            'val_loss' : min_val_loss,
+            'bleu' : max_val_bleu
+        }
+        save_checkpoint(state, ep+ep_offset, logger, os.path.join('Model', args.run_name, args.ckpt_file), args)
 
         writer.add_scalar('loss/val_loss', val_loss_epoch, ep + ep_offset)
         # Validation code after each epoch

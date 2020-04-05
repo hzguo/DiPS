@@ -63,7 +63,7 @@ $ cd ../../
 ### Training the sequence to sequence model
 
 ```
-python -m src.main -mode train -gpu 0 -use_attn -bidirectional -dataset quora -run_name <run_name>
+python -m src.main -mode train -gpu 0 -use_attn -bidirectional -dataset quora -run_name <run_name> -language en
 ```
 
 ### Create dictionary for submodular subset selection. Used for Semantic similarity (L<sub>2</sub>)
@@ -84,7 +84,7 @@ This will generate the `word2vec.pickle` file in `data/embeddings`
 ### Decoding using submodularity
 
 ```
-python -m src.main -mode decode -selec submod -run_name <run_name> -beam_width 10 -gpu 0
+python -m src.main -mode decode -selec submod -run_name <run_name> -beam_width 10 -gpu 0 -language en
 ```
 
 ### Citation

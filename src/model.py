@@ -171,7 +171,7 @@ class s2s(nn.Module):
         # print("=========6")
         # print(ref_hidden[0].size())
         global_loss = JointEmbeddingLoss(ref_hidden[0], out_hidden[0])
-        global_loss_weight = 0.5
+        global_loss_weight = self.config.global_loss_weight
         (self.loss + global_loss_weight*global_loss).backward()
         if self.config.max_grad_norm > 0:
             torch.nn.utils.clip_grad_norm_(self.params, self.config.max_grad_norm)

@@ -15,7 +15,7 @@ def build_parser():
     parser.add_argument('-b1', type=float, default=1.0, help='Lambda Value for Submod')
     parser.add_argument('-b2', type=float, default=1.0, help='Lambda Value for Submod')
 
-    parser.add_argument('-global_loss_weight', type=float, default=0.5, help='Global loss weight')
+    parser.add_argument('-global_loss_weight', type=float, default=0.1, help='Global loss weight')
     parser.add_argument('-language', type=str, default="en", help='Language')
 
     parser.add_argument('-selec', type=str, default='normal', choices=['normal', 'submod', 'random'], help='Subset Selection Method')
