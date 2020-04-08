@@ -60,7 +60,7 @@ def train(model, train_dataloader, val_dataloader, voc, device, args, logger, ep
     writer = SummaryWriter(os.path.join('Logs', args.run_name))
 
     for ep in range(args.max_epochs):
-
+       
         od = OrderedDict()
         od['Epoch'] = ep + ep_offset
         print_log(logger, od)
@@ -95,19 +95,19 @@ def train(model, train_dataloader, val_dataloader, voc, device, args, logger, ep
         # Run Validation experiment
         bleu_score_epoch, val_loss_epoch = run_validation(args, model, val_dataloader, voc, device, ep + ep_offset, logger)
 
-        # if bleu_score_epoch[0] > max_val_bleu:
-        min_val_loss = val_loss_epoch
-        max_val_bleu = bleu_score_epoch[0]
-        state = {
-            'epoch' : ep + ep_offset,
-            'model_state_dict': model.state_dict(),
-            'voc': model.voc,
-            'optimizer_state_dict': model.optimizer.state_dict(),
-            'train_loss' : train_loss_epoch,
-            'val_loss' : min_val_loss,
-            'bleu' : max_val_bleu
-        }
-        save_checkpoint(state, ep+ep_offset, logger, os.path.join('Model', args.run_name, args.ckpt_file), args)
+        if bleu_score_epoch[0] > max_val_bleu:
+            min_val_loss = val_loss_epoch
+            max_val_bleu = bleu_score_epoch[0]
+            state = {
+                'epoch' : ep + ep_offset,
+                'model_state_dict': model.state_dict(),
+                'voc': model.voc,
+                'optimizer_state_dict': model.optimizer.state_dict(),
+                'train_loss' : train_loss_epoch,
+                'val_loss' : min_val_loss,
+                'bleu' : max_val_bleu
+            }
+            save_checkpoint(state, ep+ep_offset, logger, os.path.join('Model', args.run_name, args.ckpt_file), args)
 
         writer.add_scalar('loss/val_loss', val_loss_epoch, ep + ep_offset)
         # Validation code after each epoch
@@ -223,6 +223,7 @@ def decode_greedy(model, test_dataloader,  voc, device, args, logger):
 
 
 
+
 # Implement decoding procedure
 def decode_beam(model, test_dataloader,  voc, device, args, logger, smethod, data_sub):
     logger.info('Test Generations')
@@ -322,6 +323,64 @@ def create_vocab_dict(args, voc, train_dataloader):
     assert len(voc.w2id) == voc.nwords
     assert len(voc.id2w) == voc.nwords
     return voc
+
+
+def calc_bleu(ref_file_name, result_file_name):
+
+    prompt_dict = {}
+
+    prompt_id = None
+
+    with open(ref_file_name, "r") as f1, open(result_file_name, "r") as f2:
+        for line in f1:
+            if len(line) == 1:
+                if prompt_id is not None:
+                    prompt_dict[prompt_id] = [prompt_accept]
+                prompt_id = None
+                continue
+
+            if prompt_id is None:
+                parts = line.split("|")
+                prompt_id = parts[0]
+                prompt_text = parts[1][:-1]
+                prompt_accept = []
+            else:
+                parts = line.split("|")
+                prompt_accept.append(parts[0])
+
+        if prompt_id is not None:
+            prompt_dict[prompt_id] = [prompt_accept]
+        prompt_id = None
+
+
+        prompt_accept = []
+
+        for line in f2:
+            if len(line) == 1:
+                if prompt_id is not None:
+                    prompt_dict[prompt_id].append(prompt_accept)
+                prompt_id = None
+                continue
+
+            if prompt_id is None:
+                parts = line.split("|")
+                prompt_id = parts[0]
+                prompt_text = parts[1][:-1]
+                prompt_accept = []
+            else:
+                prompt_accept.append(line[:-1])
+    
+    total_bleu = 0.0
+    bleu_count = 0
+
+    ref_list = []
+    out_list = []
+    for k,v in prompt_dict.items():
+        for res in v[1]:
+            out_list.append(res)
+            ref_list.append(v[0])
+    
+    return bleu_scorer(ref_list, out_list)
 
 
 def main():
@@ -472,6 +531,10 @@ def main():
             decode_greedy(model, test_dataloader, voc, device, args, logger)
         else:
             decode_beam(model, test_dataloader, voc, device, args, logger, smethod, data_sub)
+        
+        result_dir = os.path.join(args.res_folder, args.run_name)
+        results_file = os.path.join(result_dir, '{}_{}'.format(args.res_file, args.beam_width))
+        print(calc_bleu("data/en_ja/test/tgt.txt", results_file))
 
 
 if __name__ == '__main__':
